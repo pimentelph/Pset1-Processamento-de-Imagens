@@ -35,6 +35,20 @@ class Imagem:
 
     def get_pixel(self, x, y):
         return self.pixels[(y*self.largura) + x]
+    
+    def get_pixel_fora_limites(self, x, y):
+        # Se o valor X for menor que 0 ele vai ser igualado a 0
+        if x < 0 : x = 0
+        # Se o valor X for maior que a largura ele vai ser igualado ao total da largura menos 1
+        #para evitar exceder o valor da largura
+        elif x > self.largura - 1: x = self.largura - 1
+
+        if y < 0 : y = 0
+        # Se o valor y for maior que a altura ele vai ser igualado ao total da altura menos 1
+        #para evitar exceder o valor da largura
+        elif y > self.altura - 1 : y = self.altura - 1
+
+        return self.pixels[(y*self.largura) + x]
 
     def set_pixel(self, x, y, c):
         self.pixels[(y*self.largura) + x] = c
@@ -50,6 +64,37 @@ class Imagem:
                 resultado.set_pixel(x, y, nova_cor)
         return resultado
 
+    def aplicar_kernel(self, kernel):
+        # Inicializa a lista para guardar os valores resultantes depois da aplicação do kernel
+        novo_pixels = []
+        # Itera sobre cada pixel na imagem, iniciando da primeira linha e depois
+        #passando para as seguintes, seguindo o row-major-order para mexer nos pixels
+        for y in range(self.altura):
+            for x in range(self.largura):
+                # Inicializa a soma para que possa fazer a soma dos kernels
+                soma_kernel = 0
+                # Itera sobre cada elemento no kernel, da mesma forma que fizemos para y e x,
+                #seguindo o row-major-order do kernel
+                for kernely in range(len(kernel)):
+                    for kernelx in range(len(kernel[0])):
+                        # Calcula as coordenadas do pixel do kernel na imagem, onde x e y são, repectivamente,
+                        #as coordenadaa atuais do pixel na horizontal e na vertical na imagem original.
+                        # O kernelx e kernely são respectivamente o índice horizontal e vertical atual no kernel. 
+                        # (len(kernel[0]) // 2)  e (len(kernel) // 2) são usados para descobrir o deslocamento central e
+                        #as operações (x + kernelx - len(kernel[0]) // 2) e (y + kernely - len(kernel) // 2) são para 
+                        #determinar a localização do pixel na imagem original com base na posição do centro do kernel.
+                        pixelx = x + kernelx - len(kernel[0]) // 2
+                        pixely = y + kernely - len(kernel) // 2
+                        # Obtém o valor do pixel, garantindo que esteja dentro dos limites da imagem
+                        pixel = self.get_pixel_fora_limites(pixelx, pixely)
+                        # Multiplica o valor do pixel pelo valor correspondente no kernel e acumula dentro do 'soma'
+                        soma_kernel += pixel * kernel[kernely][kernelx]
+                # Adiciona o valor acumulado do pixel resultante à lista de pixels resultantes
+                novo_pixels.append(int(soma_kernel))
+        # Retorna uma nova imagem com os pixels resultantes depois da aplicação do kernel
+        return Imagem(self.largura, self.altura, novo_pixels)
+
+
     #Usamos a formula  de Lambda c: 255 - c é usado pois quando queremos inverter o
     #valor dos pixels, fazendo que o branco que é 255 vire preto e vice versa, onde o
     #valor c é o pixel atual que sera submetido a operação para a inversão do valor do mesmo.
@@ -64,6 +109,8 @@ class Imagem:
 
     def bordas(self):
         raise NotImplementedError
+    
+
 
     # Abaixo deste ponto estão utilitários para carregar, salvar e mostrar
     # as imagens, bem como para a realização de testes. Você deve ler as funções
@@ -213,14 +260,40 @@ WINDOWS_OPENED = False
 
 if __name__ == '__main__':
     """""
-    Neste bloco de código, rodamos o filtro de INVERTIDA, onde inverti onde o preto vira branco e vice-versa
-    usando a formula da função invertida, assim nós subimos a imagem carregando ela, depois usando o filtro de inversão
-    salvamos a imagem e logo depois usamos a função mostrar pra abrirmos o arquivo em um janela2
+    QUESTÃO 2:
+    Neste bloco de código, rodamos o filtro de INVERTIDA, onde inverti onde o preto vira branco 
+    e vice-versa usando a formula da função 'invertida', assim nós subimos a imagem carregando ela, 
+    depois usando o filtro de inversão salvamos a imagem e logo depois usamos a função 'mostrar'
+    pra abrirmos o arquivo em uma janela
 
     i = Imagem.carregar('test_images/bluegill.png')
     invertida = i.invertida()
-    invertida.salvar("imagemInvertida.png")
+    invertida.salvar("imagem_invertida.png")
     invertida.mostrar()
+
+
+    QUESTÃO 4:
+    Neste bloco de código, rodamos a função 'aplicar_kernel', que faz com que um kernelde tamanho
+    arbitrário passe por cada pixel da imagem, assim aplicando o kernel em todoso so pixels da imagem.
+    Nesse caso a imagem 'pigbird.png' ela alguns pixels a direita e 
+
+    i = Imagem.carregar('test_images/pigbird.png')
+    i.salvar("pigbird_sem_kernel.png")
+    kernel = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+              [1, 0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0]]
+    imagem_com_kernel = i.aplicar_kernel(kernel)
+    imagem_com_kernel.salvar("pigbird_com_kernel.png")
+    i.mostrar()
+    imagem_com_kernel.mostrar()
     """
+    pass
+
     if WINDOWS_OPENED and not sys.flags.interactive:
         tk_root.mainloop()
