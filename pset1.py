@@ -66,7 +66,7 @@ class Imagem:
 
     def aplicar_kernel(self, kernel):
         # Inicializa a lista para guardar os valores resultantes depois da aplicação do kernel
-        novo_pixels = []
+        novos_pixels = []
         # Itera sobre cada pixel na imagem, iniciando da primeira linha e depois
         #passando para as seguintes, seguindo o row-major-order para mexer nos pixels
         for y in range(self.altura):
@@ -89,10 +89,14 @@ class Imagem:
                         pixel = self.get_pixel_fora_limites(pixelx, pixely)
                         # Multiplica o valor do pixel pelo valor correspondente no kernel e acumula dentro do 'soma'
                         soma_kernel += pixel * kernel[kernely][kernelx]
-                # Adiciona o valor acumulado do pixel resultante à lista de pixels resultantes
-                novo_pixels.append(int(soma_kernel))
+                # Adiciona o valor acumulado do pixel resultante à lista de pixels resultantes e ajusta
+                #cada um para não ficar menor que 0 e nem ultrapassar 255
+                pixels_resultantes = round(soma_kernel)
+                if pixels_resultantes < 0: pixels_resultantes = 0
+                elif pixels_resultantes > 255: pixels_resultantes = 255
+                novos_pixels.append(pixels_resultantes)
         # Retorna uma nova imagem com os pixels resultantes depois da aplicação do kernel
-        return Imagem(self.largura, self.altura, novo_pixels)
+        return Imagem(self.largura, self.altura, novos_pixels)
 
 
     #Usamos a formula  de Lambda c: 255 - c é usado pois quando queremos inverter o
@@ -102,10 +106,41 @@ class Imagem:
         return self.aplicar_por_pixel(lambda c: 255 - c)
 
     def borrada(self, n):
-        raise NotImplementedError
+        kernel = []
+        for i in range(n):
+            # Cria uma lista de zeros com tamanho n para representar uma linha, e essa linha com todos
+            #os valores iguais a 0
+            linha = [0] * n 
+            # Adiciona a linha na matriz do kernel, adicionando até formar a matriz 'n x n'
+            kernel.append(linha)
+
+        # Passa por cada pixel da matriz adicionando o valor de 1 / (n**2) que é o valor necessário
+        #para que a soma de todos os valores resulte em 1
+        for kernely in range(n):
+            for kernelx in range(n):
+                kernel[kernely][kernelx] = 1 / (n**2)
+
+        return self.aplicar_kernel(kernel)
 
     def focada(self, n):
-        raise NotImplementedError
+        # Cria uma nova imagem com as mesmas dimensões e pixels da imagem original
+        imagem_i = Imagem(self.largura, self.altura, self.pixels)
+
+        # Borra a imagem original para usar na formula para obter a imagem nítida
+        imagem_borrada = self.borrada(n)
+
+        # Vamos pixel por pixel, aplicando o valor da imagem nítida, pixel por pixel usando a formúla
+        #Sx,y = round(2Ix,y - Bx,y-)
+        for y in range(self.altura):
+            for x in range(self.largura):
+                c = 2 * imagem_i.get_pixel_fora_limites(x, y) - imagem_borrada.get_pixel(x,y)
+                # Ajusto os pixels para um valor inteiro, positivo que fique entre 0 e 255, mantendo
+                pixels = round(c)
+                if pixels < 0: pixels = 0
+                elif pixels > 255: pixels = 255
+                imagem_i.set_pixel(x, y, pixels)
+
+        return imagem_i
 
     def bordas(self):
         raise NotImplementedError
@@ -259,7 +294,7 @@ except:
 WINDOWS_OPENED = False
 
 if __name__ == '__main__':
-    """""
+    """"
     QUESTÃO 2:
     Neste bloco de código, rodamos o filtro de INVERTIDA, onde inverti onde o preto vira branco 
     e vice-versa usando a formula da função 'invertida', assim nós subimos a imagem carregando ela, 
@@ -268,9 +303,8 @@ if __name__ == '__main__':
 
     i = Imagem.carregar('test_images/bluegill.png')
     invertida = i.invertida()
-    invertida.salvar("imagem_invertida.png")
+    invertida.salvar("bluegill_invertido.png")
     invertida.mostrar()
-
 
     QUESTÃO 4:
     Neste bloco de código, rodamos a função 'aplicar_kernel', que faz com que um kernelde tamanho
@@ -292,7 +326,22 @@ if __name__ == '__main__':
     imagem_com_kernel.salvar("pigbird_com_kernel.png")
     i.mostrar()
     imagem_com_kernel.mostrar()
+    
+    i = Imagem.carregar('test_images/cat.png')
+    i.salvar("cat_sem_borrar.png")
+    i_borrado = i.borrada(5)
+    i_borrado.salvar("cat_borrado.png")
+    i.mostrar()
+    i_borrado.mostrar()
     """
+
+    i = Imagem.carregar('test_images/python.png')
+    i.salvar("python_sem_nitidez.png")
+    i_nitida = i.focada(11)
+    i_nitida.salvar("python_com_nitidez.png")
+    i.mostrar()
+    i_nitida.mostrar()
+    
     pass
 
     if WINDOWS_OPENED and not sys.flags.interactive:

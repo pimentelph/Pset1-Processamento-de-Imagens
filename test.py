@@ -72,12 +72,6 @@ class TestInvertida(unittest.TestCase):
         esperado = pset1.Imagem(4,1,[226,166,119,55])
         self.assertEqual(resultado,  esperado)
 
-    def test_invertida_3(self):
-        i = pset1.Imagem.carregar('test_images/bluegill.png')
-        invertida = i.invertida()
-        invertida.salvar("imagemInvertida.png")
-        invertida.mostrar()
-
 
     def test_imagens_invertidas(self):
         for nome_arquivo in ('mushroom', 'twocats', 'chess'):
