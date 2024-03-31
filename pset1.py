@@ -51,6 +51,8 @@ class Imagem:
         return self.pixels[(y*self.largura) + x]
     
     def verificar_pixel(self, valor):
+        # Aqui eu faço a verificação dos pixels, caso o valor dele estiver abaixo de 0 e acima de 
+        #255 ele corrige para 0 e 255 respectivamente
         if valor < 0: return 0
         elif valor > 255: return 255
         else: return valor
@@ -100,7 +102,7 @@ class Imagem:
         return Imagem(self.largura, self.altura, novos_pixels)
 
 
-    #Usamos a formula  de Lambda c: 255 - c é usado pois quando queremos inverter o
+    # Usamos a formula  de Lambda c: 255 - c é usado pois quando queremos inverter o
     #valor dos pixels, fazendo que o branco que é 255 vire preto e vice versa, onde o
     #valor c é o pixel atual que sera submetido a operação para a inversão do valor do mesmo.
     def invertida(self):
@@ -140,8 +142,10 @@ class Imagem:
         #Sx,y = round(2Ix,y - Bx,y-)
         for y in range(self.altura):
             for x in range(self.largura):
+                # Usa a formula para aplicar o filtro nitidez pixel por pixel
                 c = 2 * imagem_i.get_pixel_fora_limites(x, y) - imagem_borrada.get_pixel(x,y)
-                # Ajusto os pixels para um valor inteiro, positivo que fique entre 0 e 255, mantendo
+                # Ajusto os pixels para um valor inteiro, positivo que fique entre 0 e 255, mantendo os valores entre 
+                #0 e 255
                 pixels = round(c)
                 if pixels < 0: pixels = 0
                 elif pixels > 255: pixels = 255
@@ -150,7 +154,7 @@ class Imagem:
         return imagem_i
 
     def bordas(self):
-        # Criação dos dois kerneis que serão usados aqui nesta função
+        # Criação dos dois kernels de Sobel para aplicação da formula de Sobel
         kx = [[-1, 0, 1],
               [-2, 0, 2],
               [-1, 0, 1]]
@@ -159,11 +163,15 @@ class Imagem:
               [ 0,  0,  0],
               [ 1,  2,  1]]
         
+        # Crio uma imagem identica a que sera aplicada ao filtro para melhor uso do filtro
         imagem_com_sorbel = Imagem(self.largura, self.altura, self.pixels)
         
+        # Aplico kx e ky na imagem separadamente para depois aplicar a formula de Sobel
         ox = self.aplicar_kernel(kx)
         oy = self.aplicar_kernel(ky)
 
+        # Passo pixel por pixel aplicando o novo valor do pixel usando a formula, assim dando esse novo valor 
+        #a cada pixel correspondente na imagem 
         for y in range(self.altura):
             for x in range(self.largura):
                 c = math.sqrt((ox.get_pixel_fora_limites(x, y))**2 + (oy.get_pixel_fora_limites(x, y))**2)
@@ -329,18 +337,21 @@ if __name__ == '__main__':
     e vice-versa usando a formula da função 'invertida', assim nós subimos a imagem carregando ela, 
     depois usando o filtro de inversão salvamos a imagem e logo depois usamos a função 'mostrar'
     pra abrirmos o arquivo em uma janela
+    """
 
-    i = Imagem.carregar('test_images/bluegill.png')
-    invertida = i.invertida()
+    i1 = Imagem.carregar('test_images/bluegill.png')
+    invertida = i1.invertida()
     invertida.salvar("bluegill_invertido.png")
 
+    """
     QUESTÃO 4:
     Neste bloco de código, rodamos a função 'aplicar_kernel', que faz com que um kernelde tamanho
     arbitrário passe por cada pixel da imagem, assim aplicando o kernel em todoso so pixels da imagem.
-    Nesse caso a imagem 'pigbird.png' ela alguns pixels a direita e 
+    Nesse caso a imagem 'pigbird.png' ela alguns pixels a direita e alguns pixels para baixo!
+    """
 
-    i = Imagem.carregar('test_images/pigbird.png')
-    i.salvar("pigbird_sem_kernel.png")
+    i2 = Imagem.carregar('test_images/pigbird.png')
+    i2.salvar("pigbird_sem_kernel.png")
     kernel = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
               [0, 0, 0, 0, 0, 0, 0, 0, 0],
               [1, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -350,25 +361,67 @@ if __name__ == '__main__':
               [0, 0, 0, 0, 0, 0, 0, 0, 0],
               [0, 0, 0, 0, 0, 0, 0, 0, 0],
               [0, 0, 0, 0, 0, 0, 0, 0, 0]]
-    imagem_com_kernel = i.aplicar_kernel(kernel)
+    imagem_com_kernel = i2.aplicar_kernel(kernel)
     imagem_com_kernel.salvar("pigbird_com_kernel.png")
-    
-    i = Imagem.carregar('test_images/cat.png')
-    i.salvar("cat_sem_borrar.png")
-    i_borrado = i.borrada(5)
-    i_borrado.salvar("cat_borrado.png")
-    
 
-    i = Imagem.carregar('test_images/python.png')
-    i.salvar("python_sem_nitidez.png")
-    i_nitida = i.focada(11)
-    i_nitida.salvar("python_com_nitidez.png")
     """
-    i = Imagem.carregar('test_images/construct.png')
-    i.salvar("construct_sem_borda.png")
-    i_borda = i.bordas()
+    Usando o filtro de borrada usando a imagem cat.png com kernel de tamanho 5, como pedido no PSET
+    """
+
+    i3 = Imagem.carregar('test_images/cat.png')
+    i3.salvar("cat_sem_borrar.png")
+    i3_borrado = i3.borrada(5)
+    i3_borrado.salvar("cat_borrado.png")
+    
+    """
+    Usando o filtro de nitidez na imagem python.png, como pedido no PSET
+    """
+
+    i4 = Imagem.carregar('test_images/python.png')
+    i4.salvar("python_sem_nitidez.png")
+    i_nitida = i4.focada(11)
+    i_nitida.salvar("python_com_nitidez.png")
+
+    """
+    Usando o filtro de borda na imagem construct.png, como pedido no PSET
+    """
+    
+    i5 = Imagem.carregar('test_images/construct.png')
+    i5.salvar("construct_sem_borda.png")
+    i_borda = i5.bordas()
     i_borda.salvar("construct_com_borda.png")
     
+    """
+    Ainda no filtro de borda, vamos usar os kernels de Kx e Ky separadamente para mostrar os resultados da aplicação
+    de ambos separadamente
+    """
+    kx = [[-1, 0, 1],
+          [-2, 0, 2],
+          [-1, 0, 1]]
+        
+    ky = [[-1, -2, -1],
+          [ 0,  0,  0],
+          [ 1,  2,  1]]
+    
+    i_kernelx = i5.aplicar_kernel(kx)
+    i_kernely = i5.aplicar_kernel(ky)
+
+    for y in range(i_kernelx.altura):
+        for x in range(i_kernelx.largura):
+            valor_pixel = round(i_kernelx.get_pixel(x, y))
+            i_kernelx.set_pixel(x, y, i_kernelx.verificar_pixel(valor_pixel))
+    
+    i_kernelx.salvar("mudanças_eixo_horizontal_construct.png")
+    i_kernelx.mostrar()
+
+    for y in range(i_kernely.altura):
+        for x in range(i_kernely.largura):
+            valor_pixel = round(i_kernely.get_pixel(x, y))
+            i_kernely.set_pixel(x, y, i_kernely.verificar_pixel(valor_pixel))
+    
+    i_kernely.salvar("mudanças_eixo_vertical_construct.png")
+    i_kernely.mostrar()
+
     pass
 
     if WINDOWS_OPENED and not sys.flags.interactive:
