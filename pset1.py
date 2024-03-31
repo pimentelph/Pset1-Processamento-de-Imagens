@@ -41,14 +41,19 @@ class Imagem:
         if x < 0 : x = 0
         # Se o valor X for maior que a largura ele vai ser igualado ao total da largura menos 1
         #para evitar exceder o valor da largura
-        elif x > self.largura - 1: x = self.largura - 1
+        elif x >= self.largura: x = self.largura - 1
 
         if y < 0 : y = 0
         # Se o valor y for maior que a altura ele vai ser igualado ao total da altura menos 1
         #para evitar exceder o valor da largura
-        elif y > self.altura - 1 : y = self.altura - 1
+        elif y >= self.altura : y = self.altura - 1
 
         return self.pixels[(y*self.largura) + x]
+    
+    def verificar_pixel(self, valor):
+        if valor < 0: return 0
+        elif valor > 255: return 255
+        else: return valor
 
     def set_pixel(self, x, y, c):
         self.pixels[(y*self.largura) + x] = c
@@ -89,12 +94,8 @@ class Imagem:
                         pixel = self.get_pixel_fora_limites(pixelx, pixely)
                         # Multiplica o valor do pixel pelo valor correspondente no kernel e acumula dentro do 'soma'
                         soma_kernel += pixel * kernel[kernely][kernelx]
-                # Adiciona o valor acumulado do pixel resultante à lista de pixels resultantes e ajusta
-                #cada um para não ficar menor que 0 e nem ultrapassar 255
-                pixels_resultantes = round(soma_kernel)
-                if pixels_resultantes < 0: pixels_resultantes = 0
-                elif pixels_resultantes > 255: pixels_resultantes = 255
-                novos_pixels.append(pixels_resultantes)
+                # Adiciona o valor acumulado do pixel resultante à lista de pixels resultantes
+                novos_pixels.append(soma_kernel)
         # Retorna uma nova imagem com os pixels resultantes depois da aplicação do kernel
         return Imagem(self.largura, self.altura, novos_pixels)
 
@@ -113,14 +114,20 @@ class Imagem:
             linha = [0] * n 
             # Adiciona a linha na matriz do kernel, adicionando até formar a matriz 'n x n'
             kernel.append(linha)
-
         # Passa por cada pixel da matriz adicionando o valor de 1 / (n**2) que é o valor necessário
         #para que a soma de todos os valores resulte em 1
         for kernely in range(n):
             for kernelx in range(n):
                 kernel[kernely][kernelx] = 1 / (n**2)
-
-        return self.aplicar_kernel(kernel)
+        
+        # Aplica o Kernel e logo após ele passa pixel por pixel para arredondar eles e logo depois
+        #verifica se eles estão entre 0 e 255, se não estiverem ele faz o ajuste
+        resultado = self.aplicar_kernel(kernel)
+        for y in range(resultado.altura):
+            for x in range(resultado.largura):
+                valor_pixel = round(resultado.get_pixel(x, y))
+                resultado.set_pixel(x, y, self.verificar_pixel(valor_pixel))
+        return resultado
 
     def focada(self, n):
         # Cria uma nova imagem com as mesmas dimensões e pixels da imagem original
@@ -143,7 +150,29 @@ class Imagem:
         return imagem_i
 
     def bordas(self):
-        raise NotImplementedError
+        # Criação dos dois kerneis que serão usados aqui nesta função
+        kx = [[-1, 0, 1],
+              [-2, 0, 2],
+              [-1, 0, 1]]
+        
+        ky = [[-1, -2, -1],
+              [ 0,  0,  0],
+              [ 1,  2,  1]]
+        
+        imagem_com_sorbel = Imagem(self.largura, self.altura, self.pixels)
+        
+        ox = self.aplicar_kernel(kx)
+        oy = self.aplicar_kernel(ky)
+
+        for y in range(self.altura):
+            for x in range(self.largura):
+                c = math.sqrt((ox.get_pixel_fora_limites(x, y))**2 + (oy.get_pixel_fora_limites(x, y))**2)
+                c = round(c)
+                if c < 0: c = 0
+                elif c > 255: c = 255
+                imagem_com_sorbel.set_pixel(x, y, c)
+
+        return imagem_com_sorbel
     
 
 
@@ -304,7 +333,6 @@ if __name__ == '__main__':
     i = Imagem.carregar('test_images/bluegill.png')
     invertida = i.invertida()
     invertida.salvar("bluegill_invertido.png")
-    invertida.mostrar()
 
     QUESTÃO 4:
     Neste bloco de código, rodamos a função 'aplicar_kernel', que faz com que um kernelde tamanho
@@ -324,23 +352,22 @@ if __name__ == '__main__':
               [0, 0, 0, 0, 0, 0, 0, 0, 0]]
     imagem_com_kernel = i.aplicar_kernel(kernel)
     imagem_com_kernel.salvar("pigbird_com_kernel.png")
-    i.mostrar()
-    imagem_com_kernel.mostrar()
     
     i = Imagem.carregar('test_images/cat.png')
     i.salvar("cat_sem_borrar.png")
     i_borrado = i.borrada(5)
     i_borrado.salvar("cat_borrado.png")
-    i.mostrar()
-    i_borrado.mostrar()
-    """
+    
 
     i = Imagem.carregar('test_images/python.png')
     i.salvar("python_sem_nitidez.png")
     i_nitida = i.focada(11)
     i_nitida.salvar("python_com_nitidez.png")
-    i.mostrar()
-    i_nitida.mostrar()
+    """
+    i = Imagem.carregar('test_images/construct.png')
+    i.salvar("construct_sem_borda.png")
+    i_borda = i.bordas()
+    i_borda.salvar("construct_com_borda.png")
     
     pass
 
